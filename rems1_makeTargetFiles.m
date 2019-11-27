@@ -160,7 +160,7 @@ varargout{1} = B;
 
 %% export target files in right format for exoskeleton (.dtp)
 % read in template .dtp file
-tmp = xmlread('template.dtp');
+tmp = xmlread('rems1_template.dtp');
 
 % replace relevant info about trial protocol
 textNode = tmp.getElementsByTagName('tptable').item(0).item(0);

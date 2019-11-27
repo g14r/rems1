@@ -3,8 +3,8 @@ function [varargout] = rems1_makeTargetFiles(varargin)
 % Creates .tgt files for subject(s) s and block(s) b
 %
 % example calls:
-%               [G] = rems1_makeTargetFiles([99], [1:12]);
-%               [G] = rems1_makeTargetFiles([1:20], [1:12]);
+%               [G] = rems1_makeTargetFiles([99], [1:10]);
+%               [G] = rems1_makeTargetFiles([1:20], [1:10]);
 %
 % --
 % gariani@uwo.ca - 2019.11.19
@@ -34,8 +34,10 @@ function [varargout] = rems1_target(s, b)
 % output: saved filename (fn), block structure (B)
 
 %% define target folder
-targetFolder = '../../../../robotcode/projects/SequenceRepetition/rems1/target'; %save tgt files in the right relative path
-if ~exist(targetFolder,'dir'); mkdir(targetFolder); end %create target folder if it doesn't already exist
+tgtDir = '../../../../robotcode/projects/SequenceRepetition/rems1/tgt'; %save tgt files in the right relative path
+dtpDir = '../../../../robotcode/projects/SequenceRepetition/rems1/dtp'; %save tgt files in the right relative path
+if ~exist(tgtDir,'dir'); mkdir(tgtDir); end %create target folder if it doesn't already exist
+if ~exist(dtpDir,'dir'); mkdir(dtpDir); end %create target folder if it doesn't already exist
 
 %% experimental details
 n_seq_len = 4; % how many sequence length type do you want?
@@ -86,7 +88,7 @@ for sl = 1 : n_seq_len
     for se = 1 : n_seq_exe
         f = 0; % initialize while loop flag
         while f==0
-            seq_cue(se, :, sl) = seq_pool(c,:); % which sequence from pool?
+            seq_cue(se, :, sl) = seq_pool(c,:) + 1; % which sequence from pool? (add +1 because we need numbers to be 2-9 instead of 1-8)
             seq_idx = randind(c); % which sequence index from pool?
             % check if fisrt element has already appeared for this seq
             % length type. If so, keep searching. If not, pick the seq
@@ -111,7 +113,7 @@ end
 
 %% fill in dataframe structure B for this block
 B = struct(); % initialize block structure
-all_trials = []; % initialize empty trial list
+trial_mat = []; % initialize empty trial list
 for t = 1:n_trials
     B.TN(t,1) = t; % trial number
     B.SN(t,1) = s; % subject number
@@ -120,15 +122,16 @@ for t = 1:n_trials
     B.seq_cue(t,:) = L.seq(find(z,1), :); % which sequence cue?
     if (t > 1) && (B.seq_idx(t, 1) == B.seq_idx(t-1, 1)) % check if this is a repetition or not
         % repetition trial
-        B.is_rep(t,1) = 1; % is this a repetition? (0=no; 1=yes)
+        B.is_rep(t,1)  = 1; % is this a repetition? (0=no; 1=yes)
         B.rep_num(t,1) = B.rep_num(t-1, 1) + 1; % what repetition number is this?
     else
         % switch trial
-        B.is_rep(t,1) = 0; % is this a repetition? (0=no; 1=yes)
+        B.is_rep(t,1)  = 0; % is this a repetition? (0=no; 1=yes)
         B.rep_num(t,1) = 0; % what repetition number is this?
     end
-    B.prep_time(t,1) = 2500; % fixed preparation time (in ms)
-    B.iti(t,1) = 500; % fixed inter-trial-interval duration (in ms)
+    B.prep_time(t,1)  = 2500; % fixed preparation time (in ms)
+    B.dwell_time(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
+    B.ITI(t,1)        = 500; % fixed inter-trial-interval duration (in ms)
     p = T * z; % update probabilities
     z = pickRandSeq(p); % update pick
     % put an upper limit to repetition number (i.e. avoid cases in which
@@ -139,35 +142,23 @@ for t = 1:n_trials
         end
     end
     
-    % convert numbers to strings for relevant info
-    seq_cue_str = num2str(B.seq_cue(t,:), '''%d'', ''%d'', ''%d'', ''%d''');
-    prep_time_str = num2str(B.prep_time(t,1), '''%d''');
-    iti_str = num2str(B.iti(t,1), '''%d''');
-    % form trial info string
-    this_trial_str = sprintf('[%s, %s, %s]', seq_cue_str, prep_time_str, iti_str);
-    % append list of trial info for .dtp conversion
-    if t==1; all_trials = this_trial_str; else; all_trials = [all_trials ', ' this_trial_str]; end %#ok<AGROW>
+    this_trial = [1, B.seq_cue(t,:), B.prep_time(t,1), B.dwell_time(t,1), B.ITI(t,1)]; % add 1 for the home position
+    trial_mat = [trial_mat; this_trial];
 end
-trial_list = sprintf('[%s]', all_trials);
 % sanity check: how many repetitions for each condition of interest?
 %figure; subplot(131); plt.hist(B.is_rep); subplot(132); plt.hist(B.seq_len); subplot(133); plt.hist(B.rep_num);
 
 %% save structure B as a target file (.tgt) and return output data structure B
-outfname = fullfile(targetFolder, sprintf('rems1_s%02d_b%02d', s, b));
-dsave(sprintf('%s.tgt', outfname), B);
+outfname = sprintf('rems1_s%02d_b%02d', s, b);
+dsave(fullfile(tgtDir, sprintf('%s.tgt', outfname)), B);
+
+%% export and save target files in right format for exoskeleton (.dtp)
+[dtp] = convert2dtp(trial_mat);
+xmlwrite(fullfile(dtpDir, sprintf('%s.dtp', outfname)), dtp);
+
+%% return output data structure B
 B.fn = outfname;
 varargout{1} = B;
-
-%% export target files in right format for exoskeleton (.dtp)
-% read in template .dtp file
-tmp = xmlread('rems1_template.dtp');
-
-% replace relevant info about trial protocol
-textNode = tmp.getElementsByTagName('tptable').item(0).item(0);
-textNode.set('Data', trial_list);
-
-% save out
-xmlwrite(sprintf('%s.dtp', outfname), tmp);
 end
 
 function [z] = pickRandSeq(p)
@@ -193,4 +184,32 @@ i = find(r <= cump, 1);
 
 % select and return the appropriate class
 z(i) = 1;
+end
+
+function [dtp] = convert2dtp(mat)
+% read in template .dtp file
+dtp = xmlread('rems1_template.dtp');
+tp_node = dtp.getElementsByTagName('tptable').item(0).item(0);
+
+% Convert trial matrix to TP table
+mat_size = size(mat);
+tp_table = '[';
+newline = char(10);
+for row=1:mat_size(1)
+    tp_table = [tp_table '['];
+    for col=1:mat_size(2)
+        if col==mat_size(2)
+            tp_table = [tp_table num2str(mat(row, col))]; %#ok<*AGROW>
+        else
+            tp_table = [tp_table num2str(mat(row, col)) ', '];
+        end
+    end
+    if row==mat_size(1)
+        tp_table = [tp_table ']']; 
+    else
+        tp_table = [tp_table '],' newline];
+    end
+end
+tp_table = [tp_table ']'];
+tp_node.set('Data', tp_table);
 end

@@ -129,21 +129,27 @@ for t = 1:n_trials
         B.is_rep(t,1)  = 0; % is this a repetition? (0=no; 1=yes)
         B.rep_num(t,1) = 0; % what repetition number is this?
     end
-    B.prep_time(t,1)  = 2500; % fixed preparation time (in ms)
-    B.dwell_time(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
-    B.ITI(t,1)        = 500; % fixed inter-trial-interval duration (in ms)
+    B.prep_time_min(t,1)  = 2500; % fixed preparation time (in ms)
+    B.prep_time_max(t,1)  = 2500; % fixed preparation time (in ms)
+    B.dwell_time_min(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
+    B.dwell_time_max(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
+    B.ITI(t,1)            = 500; % fixed inter-trial-interval duration (in ms)
+    B.seq_timeout(t,1)    = 3000; % how much time to complete the whole sequence? (in ms)
+    B.home(t,1)           = 1; % home target, it's 1 by default (the center of the display)
     p = T * z; % update probabilities
     z = pickRandSeq(p); % update pick
     % put an upper limit to repetition number (i.e. avoid cases in which
-    % you have 6 or more repetitions in a row
-    if B.rep_num(t,1) > 4
+    % you have more than 4 repetitions in a row
+    if B.rep_num(t,1) == 4 
         while L.idx(find(z,1)) == B.seq_idx(t,1)
             z = pickRandSeq(p); % update pick
         end
     end
-    
-    this_trial = [1, B.seq_cue(t,:), B.prep_time(t,1), B.dwell_time(t,1), B.ITI(t,1)]; % add 1 for the home position
-    trial_mat = [trial_mat; this_trial];
+    this_trial = [B.home(t,1), B.seq_cue(t,:), B.seq_len(t,1), ...
+        B.prep_time_min(t,1), B.prep_time_max(t,1), ...
+        B.dwell_time_min(t,1), B.dwell_time_max(t,1), ...
+        B.ITI(t,1), B.seq_timeout(t,1)];
+    trial_mat = [trial_mat; this_trial]; %#ok<*AGROW>
 end
 % sanity check: how many repetitions for each condition of interest?
 %figure; subplot(131); plt.hist(B.is_rep); subplot(132); plt.hist(B.seq_len); subplot(133); plt.hist(B.rep_num);
@@ -199,13 +205,13 @@ for row=1:mat_size(1)
     tp_table = [tp_table '['];
     for col=1:mat_size(2)
         if col==mat_size(2)
-            tp_table = [tp_table num2str(mat(row, col))]; %#ok<*AGROW>
+            tp_table = [tp_table num2str(mat(row, col))];
         else
             tp_table = [tp_table num2str(mat(row, col)) ', '];
         end
     end
     if row==mat_size(1)
-        tp_table = [tp_table ']']; 
+        tp_table = [tp_table ']'];
     else
         tp_table = [tp_table '],' newline];
     end

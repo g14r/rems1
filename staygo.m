@@ -1,8 +1,8 @@
 function etimes = staygo(data,index)
 
-    %   This is a function to retreive the time people spend moving between
+    %   This is a function to retrieve the time people spend moving between
     %   targets and stopped at a given target before starting to move. For
-    %   sequences of various lenghts, it will look up target position and
+    %   sequences of various lengths, it will look up target position and
     %   compute the time participants were in that target, then return the
     %   time they left each target. It is built to take an entire trial,
     %   e.g D = zipload(filename); D = KINARM_add_hand_kinematics(D);
@@ -16,7 +16,7 @@ function etimes = staygo(data,index)
     %   End:   Time when trial is finished (same as SEQ_END)
     %
     %
-    %   Note: this code should run on sequences of lenght = 1 but it won't
+    %   Note: this code should run on sequences of length = 1 but it won't
     %   be informative. Similarly, exit time for the last reach doesn't
     %   mean anything, but the script will return a value at this point for
     %   when the participant left, e.g. via servo

@@ -3,8 +3,8 @@ function [varargout] = rems1_makeTargetFiles(varargin)
 % Creates .tgt files for subject(s) s and block(s) b
 %
 % example calls:
-%               [G] = rems1_makeTargetFiles([99], [1:10]);
-%               [G] = rems1_makeTargetFiles([1:20], [1:10]);
+%               [G] = rems1_makeTargetFiles([99], [1:12]);
+%               [G] = rems1_makeTargetFiles([1:20], [1:12]);
 %
 % --
 % gariani@uwo.ca - 2019.11.19
@@ -42,10 +42,16 @@ if ~exist(dtpDir,'dir'); mkdir(dtpDir); end %create target folder if it doesn't 
 %% experimental details
 n_seq_len = 4; % how many sequence length type do you want?
 n_seq_exe = 4; % how many exemplars per seq type?
-n_seq_trl = 4; % how many trials per seq type?
+%n_seq_trl = 4; % how many trials per seq type?
+%n_trials = n_seq_len * n_seq_exe * n_seq_trl; % how many trials in a block?
+
+%%% IF YOU CHANGE THIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% ADJUST first entry of <blocktable> in rems1_template.dtp %%%%%%%%
+n_trials = 50; % how many trials in a block?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 n_seq = n_seq_len * n_seq_exe; % how many sequences in total?
 n_seq_items = 4; % how many elements per sequence (max)?
-n_trials = n_seq_len * n_seq_exe * n_seq_trl; % how many trials in a block?
 p_rep = 0.50; % probability of same sequence repetition
 p_swc = (1 - p_rep) / (n_seq - 1); % probability of switch to each other sequence
 T = eye(n_seq); T(T==1) = p_rep; T(T==0) = p_swc; % transition matrix
@@ -90,7 +96,7 @@ for sl = 1 : n_seq_len
         while f==0
             seq_cue(se, :, sl) = seq_pool(c,:) + 1; % which sequence from pool? (add +1 because we need numbers to be 2-9 instead of 1-8)
             seq_idx = randind(c); % which sequence index from pool?
-            % check if fisrt element has already appeared for this seq
+            % check if fisrt seq item has already appeared for this seq
             % length type. If so, keep searching. If not, pick the seq
             if se>1 && any(seq_cue(se, 1, sl) == seq_cue(1:se-1, 1, sl))
                 c = c+1;
@@ -98,8 +104,8 @@ for sl = 1 : n_seq_len
                 f = 1;
             end
         end
-        % remove excess cues in shorter sequences (zero padding)
-        seq_cue(se, 1+sl:end, sl) = 0;
+        % remove excess cues in shorter sequences (22-padding)
+        seq_cue(se, 1+sl:end, sl) = 22;
         % store info in structure
         L1.seq = seq_cue(se, :, sl);
         L1.idx = seq_idx;
@@ -129,18 +135,19 @@ for t = 1:n_trials
         B.is_rep(t,1)  = 0; % is this a repetition? (0=no; 1=yes)
         B.rep_num(t,1) = 0; % what repetition number is this?
     end
-    B.prep_time_min(t,1)  = 2500; % fixed preparation time (in ms)
-    B.prep_time_max(t,1)  = 2500; % fixed preparation time (in ms)
-    B.dwell_time_min(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
-    B.dwell_time_max(t,1) = 200; % fixed dwell time (target acquisition hold) duration (in ms)
+    B.prep_time_min(t,1)  = 1500; % fixed preparation time (in ms)
+    B.prep_time_max(t,1)  = 2000; % fixed preparation time (in ms)
+    B.dwell_time_min(t,1) = 150; % fixed dwell time (target acquisition hold) duration (in ms)
+    B.dwell_time_max(t,1) = 150; % fixed dwell time (target acquisition hold) duration (in ms)
     B.ITI(t,1)            = 500; % fixed inter-trial-interval duration (in ms)
-    B.seq_timeout(t,1)    = 3000; % how much time to complete the whole sequence? (in ms)
+    B.seq_timeout(t,1)    = 5000; % how much time to complete the whole sequence? (in ms)
+    B.tot_trials(t,1)     = n_trials; % how many trials in the entire block?
     B.home(t,1)           = 1; % home target, it's 1 by default (the center of the display)
     p = T * z; % update probabilities
     z = pickRandSeq(p); % update pick
     % put an upper limit to repetition number (i.e. avoid cases in which
-    % you have more than 4 repetitions in a row
-    if B.rep_num(t,1) == 4 
+    % you have more than 4 repetitions (5 executions) in a row
+    if B.rep_num(t,1) == 4
         while L.idx(find(z,1)) == B.seq_idx(t,1)
             z = pickRandSeq(p); % update pick
         end
@@ -148,7 +155,7 @@ for t = 1:n_trials
     this_trial = [B.home(t,1), B.seq_cue(t,:), B.seq_len(t,1), ...
         B.prep_time_min(t,1), B.prep_time_max(t,1), ...
         B.dwell_time_min(t,1), B.dwell_time_max(t,1), ...
-        B.ITI(t,1), B.seq_timeout(t,1)];
+        B.ITI(t,1), B.seq_timeout(t,1), B.tot_trials(t,1)];
     trial_mat = [trial_mat; this_trial]; %#ok<*AGROW>
 end
 % sanity check: how many repetitions for each condition of interest?
@@ -193,9 +200,6 @@ z(i) = 1;
 end
 
 function [dtp] = convert2dtp(mat)
-% read in template .dtp file
-dtp = xmlread('rems1_template.dtp');
-tp_node = dtp.getElementsByTagName('tptable').item(0).item(0);
 
 % Convert trial matrix to TP table
 mat_size = size(mat);
@@ -217,5 +221,11 @@ for row=1:mat_size(1)
     end
 end
 tp_table = [tp_table ']'];
+
+% read in template .dtp file
+dtp = xmlread('rems1_template.dtp');
+
+% replace tp node with new tp_table info
+tp_node = dtp.getElementsByTagName('tptable').item(0).item(0);
 tp_node.set('Data', tp_table);
 end

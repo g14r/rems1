@@ -1,2 +1,2 @@
 # rems1
-Repetition Effects in reaching Movement Sequences (REMS)
+Repetition Effects in upper libm Movement Sequences (REMS)

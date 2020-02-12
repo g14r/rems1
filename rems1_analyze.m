@@ -29,7 +29,7 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % subjects
 % incomplete:
 % high-error:
-subj = {'s98', 's97', 's96', 's95', 's94'};
+subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -70,14 +70,14 @@ maxRep = 3; % default ceiling level for repetition number (0 = no ceiling)
 style.reset;
 style.custom({blue,lightblue,red,lightred,orange,yellow,lightyellow,purple,lightpurple,darkgray,gray,gray2,lightgray,green,lightgreen,black,silver,white,...
     cbs_red,cbs_yellow,cbs_blue,cbs_green,cbs_pink});
-isrepsty = style.custom({lightgray, darkgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
-lightgraysty = style.custom({lightgray}, 'markertype','none', 'linewidth',1, 'errorwidth',1, 'errorcap',0, 'linestyle','-');
+%isrepsty = style.custom({lightgray, darkgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
+%lightgraysty = style.custom({lightgray}, 'markertype','none', 'linewidth',1, 'errorwidth',1, 'errorcap',0, 'linestyle','-');
 darkgraysty = style.custom({darkgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
-blacksty = style.custom({black}, 'markertype','none', 'linewidth',lw, 'linestyle','--','errorbars','plusminus', 'errorwidth',lw, 'errorcap',0);%, 'linestyle','none');
+%blacksty = style.custom({black}, 'markertype','none', 'linewidth',lw, 'linestyle','--','errorbars','plusminus', 'errorwidth',lw, 'errorcap',0);%, 'linestyle','none');
 % graysty = style.custom({lightgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
 % nm1sty = style.custom({cbs_pink, cbs_blue}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
 % sffsty = style.custom({lightgray, gray, darkgray}, 'markersize',ms, 'linewidth',lw);
-boxplotsty = style.custom({darkgray}, 'markertype','none', 'linewidth',lw);
+%boxplotsty = style.custom({darkgray}, 'markertype','none', 'linewidth',lw);
 % isrepstybox = style.custom({gray, black}, 'markersize',lw, 'linewidth',lw);
 
 % legends
@@ -99,6 +99,7 @@ switch (what)
                 data = sort_trials(zip_load(fname), 'execution');  % loads trials in execution order
                 D = data.c3d;
                 for t = 1:length(D)
+                    
                     % add trial info
                     T.TN(t,1) = t;
                     T.BN(t,1) = b;
@@ -120,6 +121,7 @@ switch (what)
                         T.is_rep(t,1) = 0;
                         T.rep_num(t,1) = rn;
                     end
+                    
                     % add error info (tag error trials)
                     if ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'SEQ_END')))
                         T.is_error(t,1) = 0;
@@ -127,98 +129,71 @@ switch (what)
                     elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_ANTICIP_ERROR')))
                         T.is_error(t,1) = 1;
                         T.timing_error(t,1) = 1;
-                    elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TGT_ANTICIP_ERROR')))
-                        T.is_error(t,1) = 1;
-                        T.timing_error(t,1) = 1;
-                    elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TGT_SLOW_ERROR')))
-                        T.is_error(t,1) = 1;
-                        T.timing_error(t,1) = 1;
                     elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TGT_WRONG_ERROR')))
                         T.is_error(t,1) = 1;
                         T.timing_error(t,1) = 0;
+                    elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TGT_ANTICIP_ERROR')))
+                        T.is_error(t,1) = 1;
+                        T.timing_error(t,1) = 2;
+                    elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TGT_SLOW_ERROR')))
+                        T.is_error(t,1) = 1;
+                        T.timing_error(t,1) = 3;
                     elseif ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TASK_RESET')))
                         T.is_error(t,1) = 1;
                         T.timing_error(t,1) = 0;
                     else
                         error('Unknown condition! Check event labels for this trial.');
                     end
-                    % if correct trial
+                    
+                    % add RT/MT info
                     if T.is_error(t,1) == 0
                         T.prep_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3))*1000 - (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
-                        % get reach times
-                        switch T.seq_len(t,1)
-                            case 1
-                                T.reach1_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_1')),2))*1000;
-                                T.reach2_time(t,1) = NaN;
-                                T.reach3_time(t,1) = NaN;
-                                T.reach4_time(t,1) = NaN;
-                            case 2
-                                T.reach1_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_1')),2))*1000;
-                                T.reach2_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_2')),2))*1000;
-                                T.reach3_time(t,1) = NaN;
-                                T.reach4_time(t,1) = NaN;
-                            case 3
-                                T.reach1_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_1')),2))*1000;
-                                T.reach2_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_2')),2))*1000;
-                                T.reach3_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_3')),2))*1000;
-                                T.reach4_time(t,1) = NaN;
-                            case 4
-                                T.reach1_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_1')),2))*1000;
-                                T.reach2_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_2')),2))*1000;
-                                T.reach3_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_3')),2))*1000;
-                                T.reach4_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_4')),2))*1000;
-                        end
-                        % get mov onset
-                        time_go_singal = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),2))*1000;
-                        time_reach_1 = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'REACH_1')),2))*1000;
-                        handX_filt_vel = gradient(D(t).Right_HandX, 0.001);
-                        handY_filt_vel = gradient(D(t).Right_HandY, 0.001);
-                        TANVEL_filt = sqrt( (handX_filt_vel.^2) + (handY_filt_vel.^2) );
-                        [max_vel, max_vel_time] = nanmax(TANVEL_filt(time_go_singal:time_reach_1));
-                        time_stamp = find((TANVEL_filt(time_go_singal:time_go_singal+max_vel_time)) <= (0.05 * max_vel)); % Here I take the velocity and find the values above 5%
-                        if isempty(time_stamp) || numel(time_stamp) < 100
+                        M = staygo(D(t), t);
+                        T.RT(t,1) = M.MO - M.GS;
+                        T.MT(t,1) = M.End - M.MO;
+                        T.TT(t,1) = M.End - M.GS;
+                        % if RT is negative, or impossibly fast, it means
+                        % cue anticipation, hence an error
+                        if T.RT(t,1)<=50
                             T.is_error(t,1) = 1;
                             T.timing_error(t,1) = 1;
                             T.prep_time(t,1) = NaN;
-                            T.reach1_time(t,1) = NaN;
-                            T.reach2_time(t,1) = NaN;
-                            T.reach3_time(t,1) = NaN;
-                            T.reach4_time(t,1) = NaN;
+                            M.GS = NaN;
+                            M.MO = NaN;
+                            M.En1 = NaN;
+                            M.En2 = NaN;
+                            M.En3 = NaN;
+                            M.En4 = NaN;
+                            M.Ex1 = NaN;
+                            M.Ex2 = NaN;
+                            M.Ex3 = NaN;
+                            M.Ex4 = NaN;
+                            M.End = NaN;
                             T.RT(t,1) = NaN;
                             T.MT(t,1) = NaN;
                             T.TT(t,1) = NaN;
-                        else
-                            mov_onset = time_go_singal+time_stamp(end); % the first value above 5% peak velocity is your movement onset
-                            T.RT(t,1) = mov_onset - time_go_singal;
-                            % if RT is negative, it means cue anticipation, hence an error
-                            if T.RT(t,1)<=50 || T.RT(t,1)>450
-                                T.is_error(t,1) = 1;
-                                T.timing_error(t,1) = 1;
-                                T.prep_time(t,1) = NaN;
-                                T.reach1_time(t,1) = NaN;
-                                T.reach2_time(t,1) = NaN;
-                                T.reach3_time(t,1) = NaN;
-                                T.reach4_time(t,1) = NaN;
-                                T.RT(t,1) = NaN;
-                                T.MT(t,1) = NaN;
-                                T.TT(t,1) = NaN;
-                            end
-                            % calc mov times
-                            T.MT(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'SEQ_END')),2))*1000 - mov_onset;
-                            T.TT(t,1) = T.RT(t,1) + T.MT(t,1);
                         end
-                    else % error trial
+                    else
                         T.prep_time(t,1) = NaN;
-                        T.reach1_time(t,1) = NaN;
-                        T.reach2_time(t,1) = NaN;
-                        T.reach3_time(t,1) = NaN;
-                        T.reach4_time(t,1) = NaN;
+                        M.GS = NaN;
+                        M.MO = NaN;
+                        M.En1 = NaN;
+                        M.En2 = NaN;
+                        M.En3 = NaN;
+                        M.En4 = NaN;
+                        M.Ex1 = NaN;
+                        M.Ex2 = NaN;
+                        M.Ex3 = NaN;
+                        M.Ex4 = NaN;
+                        M.End = NaN;
                         T.RT(t,1) = NaN;
                         T.MT(t,1) = NaN;
                         T.TT(t,1) = NaN;
                     end
+                    T = addstruct(T, M);
+                    
                     % add points info
-                    T.points(t,1) = 0;
+                    T.points(t,1) = NaN;
                 end
                 % add blocks
                 B = addstruct(B, T);
@@ -230,16 +205,23 @@ switch (what)
     case 'dataset' % pre-analysis: create specific dataset from selected participants
         sn = subvec;
         vararginoptions(varargin, {'sn'});
+        
         % main loop
-        ds = [];
+        ds = []; % dataset structure
         for s = 1:numel(sn)
             fprintf('\n%s\n\n', subj{s});
             S = load(fullfile(path_to_data, sprintf('rems1_%s.mat', subj{s}))); % load data structure for each subject
             % add subjects
             ds = addstruct(ds, S);
         end
-        % save
-        save(fullfile(path_to_analyze, sprintf('rems1_allsub_N=%02d.mat', numel(sn))), '-struct', 'ds'); % save all_data.mat file
+        
+        % save structure in .mat file
+        fname = sprintf('rems1_ds_N=%02d', numel(sn));
+        save(fullfile(path_to_analyze, [fname '.mat']), '-struct', 'ds'); % save all_data.mat file
+        
+        % export also as .txt file for later analysis in Python
+        dsave(fullfile(path_to_analyze, [fname '.txt']), ds)
+        
         % out
         varargout={ds}; %return main structure
         
@@ -249,7 +231,7 @@ switch (what)
         if nargin>1 % load single subj data
             D = load( fullfile(path_to_data, sprintf('rems1_s%02d.mat', sn)));
         else % load group data
-            D = load(fullfile(path_to_analyze, sprintf('rems1_allsub_N=%02d.mat', numel(sn))));
+            D = load(fullfile(path_to_analyze, sprintf('rems1_ds_N=%02d.mat', numel(sn))));
         end
         % select repetitions of interest
         if numel(rs)>1; D = getrow(D, ismember(D.rep_num, rs)); end
@@ -311,7 +293,7 @@ switch (what)
         if nargin>1 % load single subj data
             D = load( fullfile(path_to_data, sprintf('rems1_s%02d.mat', sn)));
         else % load group data
-            D = load(fullfile(path_to_analyze, sprintf('rems1_allsub_N=%02d.mat', numel(sn))));
+            D = load(fullfile(path_to_analyze, sprintf('rems1_ds_N=%02d.mat', numel(sn))));
         end
         % select repetitions of interest
         if numel(rs)>1; D = getrow(D, ismember(D.rep_num, rs)); end
@@ -373,7 +355,7 @@ switch (what)
         if nargin>1 % load single subj data
             D = load( fullfile(path_to_data, sprintf('rems1_s%02d.mat', sn)));
         else % load group data
-            D = load(fullfile(path_to_analyze, sprintf('rems1_allsub_N=%02d.mat', numel(sn))));
+            D = load(fullfile(path_to_analyze, sprintf('rems1_ds_N=%02d.mat', numel(sn))));
         end
         % select repetitions of interest
         if numel(rs)>1; D = getrow(D, ismember(D.rep_num, rs)); end
@@ -385,9 +367,9 @@ switch (what)
         %-------------------------------------------------------------------------------------------------------------------------------------
         % Rep Eff IRI overall
         T = tapply(D, {'SN', 'is_rep'}, ...
-            {D.reach2_time - D.reach1_time, 'nanmedian', 'name', 'IRI1'}, ...
-            {D.reach3_time - D.reach2_time, 'nanmedian', 'name', 'IRI2'}, ...
-            {D.reach4_time - D.reach3_time, 'nanmedian', 'name', 'IRI3'}, ...
+            {D.En2 - D.En1, 'nanmedian', 'name', 'IRI1'}, ...
+            {D.En3 - D.En2, 'nanmedian', 'name', 'IRI2'}, ...
+            {D.En4 - D.En3, 'nanmedian', 'name', 'IRI3'}, ...
             'subset', D.is_error==0 & D.seq_len>1);
         
         for i = 1:3
@@ -409,9 +391,9 @@ switch (what)
         %-------------------------------------------------------------------------------------------------------------------------------------
         % Rep Eff IRI by seq len
         T = tapply(D, {'SN', 'is_rep', 'seq_len'}, ...
-            {D.reach2_time - D.reach1_time, 'nanmedian', 'name', 'IRI1'}, ...
-            {D.reach3_time - D.reach2_time, 'nanmedian', 'name', 'IRI2'}, ...
-            {D.reach4_time - D.reach3_time, 'nanmedian', 'name', 'IRI3'}, ...
+            {D.En2 - D.En1, 'nanmedian', 'name', 'IRI1'}, ...
+            {D.En3 - D.En2, 'nanmedian', 'name', 'IRI2'}, ...
+            {D.En4 - D.En3, 'nanmedian', 'name', 'IRI3'}, ...
             'subset', D.is_error==0 & D.seq_len>1);
         
         for i = 1:3

@@ -34,8 +34,8 @@ function [varargout] = rems1_target(s, b)
 % output: saved filename (fn), block structure (B)
 
 %% define target folder
-tgtDir = '../../../../robotcode/projects/SequenceRepetition/rems1/tgt'; %save tgt files in the right relative path
-dtpDir = '../../../../robotcode/projects/SequenceRepetition/rems1/dtp'; %save tgt files in the right relative path
+tgtDir = '/Users/gariani/Documents/robotcode/projects/SequenceRepetition/rems1/tgt'; %save tgt files in the right folder
+dtpDir = '/Users/gariani/Documents/robotcode/projects/SequenceRepetition/rems1/dtp'; %save tgt files in the right folder
 if ~exist(tgtDir,'dir'); mkdir(tgtDir); end %create target folder if it doesn't already exist
 if ~exist(dtpDir,'dir'); mkdir(dtpDir); end %create target folder if it doesn't already exist
 

@@ -88,17 +88,31 @@ switch (what)
     case 'get_data' % pre-analysis: extract and save relevant data for each participant
         sn = subvec;
         vararginoptions(varargin, {'sn'});
+        
         % main loop
         for s = 1:numel(sn)
             B = [];
+            
             % get number of blocks for this subj, and filename for each block
             block = dir(fullfile(path_to_data, sprintf('s%02d/*.zip', sn(s))));
             nb = numel(block);
             for b = 1:nb
+                T = [];
                 fname = fullfile(path_to_data, sprintf('s%02d/%s', sn(s), block(b).name));
                 data = sort_trials(zip_load(fname), 'execution');  % loads trials in execution order
-                D = data.c3d;
+                D = data.c3d; D = KINARM_add_hand_kinematics(D);
+                % Information added after a few pilot subjs.
+                % If absent, create but leave empty
+                if ~isfield(D, 'ACH1'); D(1).ACH1 = []; end
+                if ~isfield(D, 'ACH2'); D(1).ACH2 = []; end
+                if ~isfield(D, 'ACH3'); D(1).ACH3 = []; end
+                
                 for t = 1:length(D)
+                    % Information added after a few pilot subjs.
+                    % If empty, fill with NaNs
+                    if isempty(D(t).ACH1); D(t).ACH1 = NaN; end
+                    if isempty(D(t).ACH2); D(t).ACH2 = NaN; end
+                    if isempty(D(t).ACH3); D(t).ACH3 = NaN; end
                     
                     % add trial info
                     T.TN(t,1) = t;
@@ -116,10 +130,24 @@ switch (what)
                             T.is_rep(t,1) = 0;
                             T.rep_num(t,1) = rn;
                         end
+                        if ~isnan(D(t).ACH3)
+                            if D(t).ACH3(end) == D(t-1).ACH3(end)
+                                T.is_error(t,1) = 0;
+                            else
+                                T.is_error(t,1) = 1;
+                            end
+                        end
                     else
                         rn = 0;
                         T.is_rep(t,1) = 0;
                         T.rep_num(t,1) = rn;
+                        if ~isnan(D(t).ACH3)
+                            if D(t).ACH3(end) == 0
+                                T.is_error(t,1) = 0;
+                            else
+                                T.is_error(t,1) = 1;
+                            end
+                        end
                     end
                     
                     % add error info (tag error trials)
@@ -152,6 +180,7 @@ switch (what)
                         T.RT(t,1) = M.MO - M.GS;
                         T.MT(t,1) = M.End - M.MO;
                         T.TT(t,1) = M.End - M.GS;
+                        
                         % if RT is negative, or impossibly fast, it means
                         % cue anticipation, hence an error
                         if T.RT(t,1)<=50
@@ -173,6 +202,7 @@ switch (what)
                             T.MT(t,1) = NaN;
                             T.TT(t,1) = NaN;
                         end
+                        
                     else
                         T.prep_time(t,1) = NaN;
                         M.GS = NaN;
@@ -193,11 +223,15 @@ switch (what)
                     T = addstruct(T, M);
                     
                     % add points info
-                    T.points(t,1) = NaN;
+                    T.points_trial(t,1) = D(t).ACH1(end); % how many points for this trial
+                    T.points_block(t,1) = D(t).ACH2(end); % cumulative count og points in this block
+                    T.errors_block(t,1) = D(t).ACH3(end); % cumulative count of errors in this block
                 end
+                
                 % add blocks
                 B = addstruct(B, T);
             end
+            
             % save this subj's data in a .mat file
             save(fullfile(path_to_data, sprintf('rems1_s%02d.mat',sn(s))), '-struct', 'B');
         end

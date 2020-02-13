@@ -60,12 +60,12 @@ end
 
 etimes.GS = go;
 etimes.MO = mo;
-etimes.En1 = E(1);                                              %Build the output structure. NAN will be
-etimes.En2 = E(2);                                              %retained if that target wasn't used
-etimes.En3 = E(3);                                              %there are a maximum of 3 times for a 4-reach sequence
+etimes.En1 = E(1);                                              % Build the output structure. NAN will be
+etimes.En2 = E(2);                                              % retained if that target wasn't used
+etimes.En3 = E(3);                                              % there are a maximum of 3 times for a 4-reach sequence
 etimes.En4 = E(4);
 etimes.Ex1 = L(1);
 etimes.Ex2 = L(2);
 etimes.Ex3 = L(3);
-etimes.Ex4 = L(4);                                              %Exit for target 4 never means anything!
+etimes.Ex4 = L(4);                                              % Exit for target 4 never means anything!
 etimes.End = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'SEQ_END'))*1000);

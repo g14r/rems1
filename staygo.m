@@ -34,7 +34,7 @@ rtimes = round(data.EVENTS.TIMES(rindex)*1000);                                 
 
 
 vcomp = [data.Right_HandXVel, data.Right_HandYVel];                                 % X and Y components of velocity
-vel_trial = sqrt(sum(vcomp.^2,2));   
+vel_trial = sqrt(sum(vcomp.^2,2));
 vel = vel_trial(go:rtimes(1));                                                      % compute velocity in first reach interval
 [~,y] = max(vel > 0.05*max(vel));                                                   % find index where v > 5% of max velocity
 mo = y + go;                                                                        % get time w.r.t. beginning of trial
@@ -68,4 +68,5 @@ etimes.Ex1 = L(1);
 etimes.Ex2 = L(2);
 etimes.Ex3 = L(3);
 etimes.Ex4 = L(4);                                              % Exit for target 4 never means anything!
-etimes.End = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'SEQ_END'))*1000);
+etimes.End = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'SEQ_END')) * 1000); % SEQ_END denotes the end of each reach (after the dwell-time)
+etimes.End = etimes.End(end);                                   % Therefore, to compute the end of a sequence we need to take the end of the last reach

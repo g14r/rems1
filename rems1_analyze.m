@@ -176,7 +176,12 @@ switch (what)
                     % add RT/MT info
                     if T.is_error(t,1) == 0
                         T.prep_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3))*1000 - (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
-                        M = staygo(D(t), t);
+                        % decide whether to use photodiode, or not, for RT
+                        % calculation (for pilot data ? SN>90 ? it's not a
+                        % good idea because use of photodiode changed
+                        % between participants
+                        if sn(s) > 90; diode = 0; else; diode = 1; end
+                        M = staygo(D(t), t, diode);
                         T.RT(t,1) = M.MO - M.GS;
                         T.MT(t,1) = M.End - M.MO;
                         T.TT(t,1) = M.End - M.GS;

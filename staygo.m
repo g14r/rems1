@@ -30,7 +30,6 @@ function etimes = staygo(data,index,diode)
 %
 %   Right now the code will not run on error trials.
 
-
 go = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'GO_SIGNAL'))*1000);      % Look up the go signal; in the
 
 targets = [data.TARGET_TABLE.X_GLOBAL(1:9),data.TARGET_TABLE.Y_GLOBAL(1:9)].*.01;   % targets are the same for each trial
@@ -51,14 +50,12 @@ end
 
 if diode == 1                                                                       % compute onset based on photodiode
     if ~isempty(rtimes)                                                             % we can only do this if reach 1 exists
-        [~,on] = min(data.ACH0(go:rtimes(1)) < 2.50);                               % onset w.r.t. go event   
+        [~,on] = min(data.ACH0(go:rtimes(1)) < 2.50);                               % onset w.r.t. go event
+        if on == 1; on = 0; end                                                     % if photodiode was off, index would be 1, so just ignore on info (0) and go with event times instead
         go = on + go;                                                               % onset in actual time
     end
 end
         
-
-
-    
 Targs = zeros(4,1);
 Targs(1) = data.TP_TABLE.TARGET_1(index);                       % Looking up the target order
 Targs(2) = data.TP_TABLE.TARGET_2(index);

@@ -59,7 +59,7 @@ p1 = ones(1,n_seq) * (1/n_seq); % initial probablity (the same for all sequences
 z = pickRandSeq(p1); % initialize the first random pick
 
 %% pick sequences
-allseq = permn(1:8, 4); % all possible sequences taken 4 at a time, with repetitions
+allseq = permn(1:8, n_seq_items); % all possible sequences taken 4 at a time, with repetitions
 seq_pool = zeros(1,size(allseq,2)); % remove "runs" (e.g. 1,2,3, ... 3,2,1, ...)
 rowCount = 1;
 for r = 1:size(allseq, 1)

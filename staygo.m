@@ -1,5 +1,5 @@
 function etimes = staygo(data,index,diode)
-% function etimes = staygo(data,index)
+%% function etimes = staygo(data,index)
 %
 %   This is a function to retrieve the time people spend moving between
 %   targets and stopped at a given target before starting to move. For
@@ -87,3 +87,4 @@ etimes.Ex3 = L(3);
 etimes.Ex4 = L(4);                                              % Exit for target 4 never means anything!
 etimes.End = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'SEQ_END'))*1000); %SEQ_END denotes the end of each reach (after the dwell-time)
 etimes.End = etimes.End(end);                                   % Therefore, to compute the end of a sequence we need to take the end of the last reach
+

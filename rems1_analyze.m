@@ -29,7 +29,7 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % subjects
 % incomplete:
 % high-error:
-subj = {'s98', 's97', 's95', 's93'};
+subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -106,6 +106,7 @@ switch (what)
                 if ~isfield(D, 'ACH1'); D(1).ACH1 = []; end
                 if ~isfield(D, 'ACH2'); D(1).ACH2 = []; end
                 if ~isfield(D, 'ACH3'); D(1).ACH3 = []; end
+                targets = [D(1).TARGET_TABLE.X_GLOBAL(1:9), D(1).TARGET_TABLE.Y_GLOBAL(1:9)].*.01;   % targets are the same for each trial
                 
                 for t = 1:length(D)
                     % Information added after a few pilot subjs.
@@ -120,16 +121,43 @@ switch (what)
                     T.SN(t,1) = sn(s);
                     T.seq_len(t,1) = D(t).TP_TABLE.SEQ_LEN(t);
                     T.seq_cue(t,:) = [D(t).TP_TABLE.TARGET_1(t), D(t).TP_TABLE.TARGET_2(t), D(t).TP_TABLE.TARGET_3(t), D(t).TP_TABLE.TARGET_4(t)];
+                    % tag same sequence repetitions
                     if t>1
+                        % every trial but the first
                         if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) && T.is_error(t-1,1) == 0
+                            % is repetition
                             rn = rn + 1;
                             T.is_rep(t,1) = 1;
                             T.rep_num(t,1) = rn;
+                            T.is_first_swc(t,1) = -1;
+                            T.swc_same_len(t,1) = -1;
                         else
+                            % is switch
                             rn = 0;
                             T.is_rep(t,1) = 0;
                             T.rep_num(t,1) = rn;
+                            % check if it's the first time this sequence
+                            % was presented in the block (first switch).
+                            % The logic is to check whether repetition
+                            % effect is due to novelty (first switch) or
+                            % to switching (not first switch).
+                            if any( all(T.seq_cue(t,:) == T.seq_cue(1:t-1,:),2) ) && T.is_error(t-1,1) == 0
+                                T.is_first_swc(t,1) = 0;
+                            else
+                                T.is_first_swc(t,1) = 1;
+                            end
+                            % check if this switch was preceded by another
+                            % sequence of the length. The logic is to
+                            % check whether repetition effect is due to
+                            % switching sequence type, or switching
+                            % sequence length.
+                            if T.seq_len(t,1) == T.seq_len(t-1,1)
+                                T.swc_same_len(t,1) = 1;
+                            else
+                                T.swc_same_len(t,1) = 0;
+                            end
                         end
+                        % look for error trials using error count (ACH3)
                         if ~isnan(D(t).ACH3)
                             if D(t).ACH3(end) == D(t-1).ACH3(end)
                                 T.is_error(t,1) = 0;
@@ -137,10 +165,80 @@ switch (what)
                                 T.is_error(t,1) = 1;
                             end
                         end
+                        
+                        %                         %-------------------------------------------------------------------------------------------------------------------------------------
+                        %                         % detect same first target (sft) in different sequences
+                        %                         T.sff = zeros(numel(T.TN), 1);
+                        %                         for t = 2:numel(T.sff)
+                        %
+                        %                             if (T.isRep(t) == 1)
+                        %                                 % repetition
+                        %                                 T.sff(t) = 2;
+                        %                             elseif (T.isRep(t) == 0) && (T.press1(t, 1) == T.press1(t-1, 1))
+                        %                                 % switch, same first finger (sff)
+                        %                                 T.sff(t) = 1;
+                        %                             elseif (T.isRep(t) == 0)
+                        %                                 % switch
+                        %                                 T.sff(t) = 0;
+                        %                             else % not categorized
+                        %                                 error('This transition does not fall into any of the defined categories!');
+                        %                             end
+                        %                         end
+                        
+                        %                         %-------------------------------------------------------------------------------------------------------------------------------------
+                        %                         % detect same reach transition (srt) in different sequences
+                        %                         T.sft = zeros(numel(T.TN), 1);
+                        %                         for t = 2:numel(T.sft)
+                        %                             % build transition matrix for consecutive sequences
+                        %                             seq1 = num2str(T.cuePress(t));
+                        %                             tm1 = zeros(5);
+                        %                             for i = 2:(numel(seq1))
+                        %                                 tm1(str2double(seq1(i)), str2double(seq1(i-1))) = 1;
+                        %                             end
+                        %                             seq2 = num2str(T.cuePress(t-1));
+                        %                             tm2 = zeros(5);
+                        %                             for i = 2:(numel(seq2))
+                        %                                 tm2(str2double(seq2(i)), str2double(seq2(i-1))) = 1;
+                        %                             end
+                        %                             %
+                        %                             if (T.isRep(t) == 1)
+                        %                                 % repetition
+                        %                                 T.sft(t) = 123;
+                        %                             elseif (T.isRep(t) == 0) && (T.press2(t, 1) == T.press2(t-1, 1)) && (T.press3(t, 1) == T.press3(t-1, 1)) && (T.press4(t, 1) == T.press4(t-1, 1))
+                        %                                 % switch, same scond and third transitions
+                        %                                 T.sft(t) = 23;
+                        %                             elseif (T.isRep(t) == 0) && (T.press1(t, 1) == T.press1(t-1, 1)) && (T.press2(t, 1) == T.press2(t-1, 1)) && (T.press3(t, 1) == T.press3(t-1, 1))
+                        %                                 % switch, same first and second transitions
+                        %                                 T.sft(t) = 12;
+                        %                             elseif (T.isRep(t) == 0) && (T.press3(t, 1) == T.press3(t-1, 1)) && (T.press4(t, 1) == T.press4(t-1, 1))
+                        %                                 % switch, same third transition
+                        %                                 T.sft(t) = 3;
+                        %                             elseif (T.isRep(t) == 0) && (T.press2(t, 1) == T.press2(t-1, 1)) && (T.press3(t, 1) == T.press3(t-1, 1))
+                        %                                 % switch, same second transition
+                        %                                 T.sft(t) = 2;
+                        %                             elseif (T.isRep(t) == 0) && (T.press1(t, 1) == T.press1(t-1, 1)) && (T.press2(t, 1) == T.press2(t-1, 1))
+                        %                                 % switch, same first transition
+                        %                                 T.sft(t) = 1;
+                        %                             elseif (T.isRep(t) == 0) && ~any(any(tm1==1 & tm1==tm2))
+                        %                                 % switch, all transitions are different
+                        %                                 T.sft(t) = 0;
+                        %                             elseif (T.isRep(t) == 0)
+                        %                                 % switch, some transitions may be shared
+                        %                                 T.sft(t) = -1;
+                        %                             else
+                        %                                 % not categorized
+                        %                                 error('This transition does not fall into any of the defined categories!');
+                        %                             end
+                        %                         end
+                        
                     else
+                        % first trial, always switch, always first, no same
                         rn = 0;
                         T.is_rep(t,1) = 0;
                         T.rep_num(t,1) = rn;
+                        T.is_first_swc(t,1) = 1;
+                        T.swc_same_len(t,1) = 0;
+                        % look for error trials using error count (ACH3)
                         if ~isnan(D(t).ACH3)
                             if D(t).ACH3(end) == 0
                                 T.is_error(t,1) = 0;
@@ -150,7 +248,13 @@ switch (what)
                         end
                     end
                     
-                    % add error info (tag error trials)
+                    % calculate path length (distance between targets) for each segment and whole sequence
+                    T.reach_dist(t,:) = nan(1,numel(T.seq_cue(t,:))); % preallocate with NaNs
+                    dist = sqrt( sum( ( diff( targets([1,T.seq_cue(t,T.seq_cue(t,:)<10)], :) ) ).^2, 2) ); % calculate distance for successive reaches (always starting from 1, which is home target)
+                    T.reach_dist(t,1:numel(dist)) = dist'; % store distance info
+                    T.path_len(t,1) = nansum(T.reach_dist(t,:));
+                    
+                    % add error info (tagging of different error types)
                     if ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'SEQ_END')))
                         T.is_error(t,1) = 0;
                         T.timing_error(t,1) = 0;

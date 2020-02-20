@@ -133,7 +133,7 @@ switch (what)
                             rn = rn + 1;
                             T.is_rep(t,1) = 1;
                             T.rep_num(t,1) = rn;
-                            T.is_first_swc(t,1) = -1;
+                            T.swc_is_first(t,1) = -1;
                             T.swc_same_len(t,1) = -1;
                         else
                             % is switch
@@ -146,9 +146,9 @@ switch (what)
                             % effect is due to novelty (first switch) or
                             % to switching (not first switch).
                             if any( all(T.seq_cue(t,:) == T.seq_cue(1:t-1,:),2) ) && T.is_error(t-1,1) == 0
-                                T.is_first_swc(t,1) = 0;
+                                T.swc_is_first(t,1) = 0;
                             else
-                                T.is_first_swc(t,1) = 1;
+                                T.swc_is_first(t,1) = 1;
                             end
                             % check if this switch was preceded by another
                             % sequence of the length. The logic is to
@@ -175,9 +175,9 @@ switch (what)
                         %-------------------------------------------------------------------------------------------------------------------------------------
                         % detect shared targets (swc_same_tgt) across
                         % different consecutive sequences (switches)
-                        T.seq_cue(t-1, T.seq_cue(t-1,:) > 10) = NaN;
-                        T.seq_cue(t,   T.seq_cue(t,:)   > 10) = NaN;
-                        T.swc_same_tgt(t,1) = polyval( find(T.seq_cue(t,:) == T.seq_cue(t-1,:)), 10);
+                        prev_cue = T.seq_cue(t-1, :);   prev_cue(prev_cue > 10) = NaN;
+                        this_cue = T.seq_cue(t, :);     this_cue(this_cue > 10) = NaN;
+                        T.swc_same_tgt(t,1) = polyval( find(this_cue == prev_cue), 10);
                         
                     else
                         %-------------------------------------------------------------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ switch (what)
                         rn = 0;
                         T.is_rep(t,1) = 0;
                         T.rep_num(t,1) = rn;
-                        T.is_first_swc(t,1) = 1;
+                        T.swc_is_first(t,1) = 1;
                         T.swc_same_len(t,1) = 0;
                         if ~isnan(D(t).ACH3)
                             if D(t).ACH3(end) == 0

@@ -174,10 +174,10 @@ switch (what)
                         
                         %-------------------------------------------------------------------------------------------------------------------------------------
                         % detect shared targets (swc_same_tgt) across
-                        % different successive sequences (switches)
-                        T.seq_cue(t-1, T.seq_cue(t-1,:) >10) = NaN;
-                        T.seq_cue(t,   T.seq_cue(t,:)   >10) = NaN;
-                        T.swc_same_tgt(t,1) = polyval( find(T.seq_cue(t,1) == T.seq_cue(t-1,1)), 10);
+                        % different consecutive sequences (switches)
+                        T.seq_cue(t-1, T.seq_cue(t-1,:) > 10) = NaN;
+                        T.seq_cue(t,   T.seq_cue(t,:)   > 10) = NaN;
+                        T.swc_same_tgt(t,1) = polyval( find(T.seq_cue(t,:) == T.seq_cue(t-1,:)), 10);
                         
                     else
                         %-------------------------------------------------------------------------------------------------------------------------------------
@@ -197,12 +197,14 @@ switch (what)
                         T.swc_same_tgt(t,1) = 0;
                     end
                     
+                    %-------------------------------------------------------------------------------------------------------------------------------------
                     % calculate path length (distance between targets) for each segment and whole sequence
                     T.reach_dist(t,:) = nan(1,numel(T.seq_cue(t,:))); % preallocate with NaNs
                     dist = sqrt( sum( ( diff( targets([1,T.seq_cue(t,T.seq_cue(t,:)<10)], :) ) ).^2, 2) ); % calculate distance for successive reaches (always starting from 1, which is home target)
                     T.reach_dist(t,1:numel(dist)) = dist'; % store distance info
                     T.path_len(t,1) = nansum(T.reach_dist(t,:));
                     
+                    %-------------------------------------------------------------------------------------------------------------------------------------
                     % add error info (tagging of different error types)
                     if ~isempty(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'SEQ_END')))
                         T.is_error(t,1) = 0;
@@ -226,8 +228,10 @@ switch (what)
                         error('Unknown condition! Check event labels for this trial.');
                     end
                     
+                    %-------------------------------------------------------------------------------------------------------------------------------------
                     % add RT/MT info
                     if T.is_error(t,1) == 0
+                        % correct trial
                         T.prep_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3))*1000 - (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
                         % decide whether to use photodiode, or not, for RT
                         % calculation (for pilot data ? SN>90 ? it's not a
@@ -239,6 +243,7 @@ switch (what)
                         T.MT(t,1) = M.End - M.MO;
                         T.TT(t,1) = M.End - M.GS;
                         
+                        %-------------------------------------------------------------------------------------------------------------------------------------
                         % if RT is negative, or impossibly fast, it means
                         % cue anticipation, hence an error
                         if T.RT(t,1)<=50
@@ -262,6 +267,7 @@ switch (what)
                         end
                         
                     else
+                        % error trial (filled with NaNs)
                         T.prep_time(t,1) = NaN;
                         M.GS = NaN;
                         M.MO = NaN;
@@ -280,16 +286,19 @@ switch (what)
                     end
                     T = addstruct(T, M);
                     
+                    %-------------------------------------------------------------------------------------------------------------------------------------
                     % add points info
                     T.points_trial(t,1) = D(t).ACH1(end); % how many points for this trial
-                    T.points_block(t,1) = D(t).ACH2(end); % cumulative count og points in this block
+                    T.points_block(t,1) = D(t).ACH2(end); % cumulative count of points in this block
                     T.errors_block(t,1) = D(t).ACH3(end); % cumulative count of errors in this block
                 end
                 
+                %-------------------------------------------------------------------------------------------------------------------------------------
                 % add blocks
                 B = addstruct(B, T);
             end
             
+            %-------------------------------------------------------------------------------------------------------------------------------------
             % save this subj's data in a .mat file
             save(fullfile(path_to_data, sprintf('rems1_s%02d.mat',sn(s))), '-struct', 'B');
         end

@@ -29,7 +29,8 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % subjects
 % incomplete:
 % high-error:
-subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
+%subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
+subj = {'s97', 's96', 's95', 's93'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -128,7 +129,7 @@ switch (what)
                     % tag same sequence repetitions
                     if t>1
                         % every trial but the first
-                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) && T.is_error(t-1,1) == 0
+                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) % && T.is_error(t-1,1) == 0
                             % is repetition
                             rn = rn + 1;
                             T.is_rep(t,1) = 1;
@@ -145,7 +146,7 @@ switch (what)
                             % The logic is to check whether repetition
                             % effect is due to novelty (first switch) or
                             % to switching (not first switch).
-                            if any( all(T.seq_cue(t,:) == T.seq_cue(1:t-1,:),2) ) && T.is_error(t-1,1) == 0
+                            if any( all(T.seq_cue(t,:) == T.seq_cue(1:t-1,:),2) )
                                 T.swc_is_first(t,1) = 0;
                             else
                                 T.swc_is_first(t,1) = 1;
@@ -246,7 +247,7 @@ switch (what)
                         %-------------------------------------------------------------------------------------------------------------------------------------
                         % if RT is negative, or impossibly fast, it means
                         % cue anticipation, hence an error
-                        if T.RT(t,1)<=50
+                        if T.RT(t,1)<=50 || T.MT(t,1)>1500
                             T.is_error(t,1) = 1;
                             T.timing_error(t,1) = 1;
                             T.prep_time(t,1) = NaN;

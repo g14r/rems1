@@ -29,8 +29,7 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % subjects
 % incomplete:
 % high-error:
-%subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
-subj = {'s97', 's96', 's95', 's93'};
+subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -235,64 +234,43 @@ switch (what)
                     
                     %-------------------------------------------------------------------------------------------------------------------------------------
                     % add movement timing info
-                    if T.is_error(t,1) == 0
-                        % correct trial
-                        T.prep_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3))*1000 - (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
-                        % decide whether to use photodiode, or not, for RT
-                        % calculation (for pilot data ? SN>90 ? it's not a
-                        % good idea because use of photodiode changed
-                        % between participants
-                        if sn(s) > 90; diode = 0; else; diode = 1; end
-                        M = staygo(D(t), t, diode);
-                        % calc reach times
-                        T.reach1(t,1) = M.En1 - M.MO;
-                        T.reach2(t,1) = M.En2 - M.Ex1;
-                        T.reach3(t,1) = M.En3 - M.Ex2;
-                        T.reach4(t,1) = M.En4 - M.Ex3;
-                        T.reach_all(t,:) = [T.reach1(t,1), T.reach2(t,1), T.reach3(t,1), T.reach4(t,1)];
-                        T.reach_sum(t,1) = nansum(T.reach_all(t,:));
-                        % calc dwell times
-                        T.dwell1(t,1) = M.Ex1 - M.En1;
-                        T.dwell2(t,1) = M.Ex2 - M.En2;
-                        T.dwell3(t,1) = M.Ex3 - M.En3;
-                        T.dwell4(t,1) = M.End - M.En4;
-                        T.dwell_all(t,:) = [T.dwell1(t,1), T.dwell2(t,1), T.dwell3(t,1), T.dwell4(t,1)];
-                        T.dwell_sum(t,1) = nansum(T.dwell_all(t,:));
-                        % calc overall mov times
-                        T.RT(t,1) = M.MO - M.GS;
-                        T.MT(t,1) = M.End - M.MO;
-                        T.TT(t,1) = M.End - M.GS;
-                        
-                        %-------------------------------------------------------------------------------------------------------------------------------------
-                        % if RT is negative, or impossibly fast, it means
-                        % cue anticipation, hence flag as error. Same for
-                        % reach times longer than 1.5s, bad trials
-                        if T.RT(t,1)<=50 || any(T.reach_all(t,:)>1500)
-                            T.is_error(t,1) = 1;
-                            T.timing_error(t,1) = 1;
-                        end
-                        
-                    else
-                        % error trial (filled with NaNs as we don't have
-                        % all the information that we need)
-                        T.prep_time(t,1) = NaN;
-                        T.reach1(t,1) = NaN;
-                        T.reach2(t,1) = NaN;
-                        T.reach3(t,1) = NaN;
-                        T.reach4(t,1) = NaN;
-                        T.reach_all(t,:) = NaN;
-                        T.reach_sum(t,1) = NaN;
-                        T.dwell1(t,1) = NaN;
-                        T.dwell2(t,1) = NaN;
-                        T.dwell3(t,1) = NaN;
-                        T.dwell4(t,1) = NaN;
-                        T.dwell_all(t,:) = NaN;
-                        T.dwell_sum(t,1) = NaN;
-                        T.RT(t,1) = NaN;
-                        T.MT(t,1) = NaN;
-                        T.TT(t,1) = NaN;
+                    pt = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3)) *1000 ...
+                        -(round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
+                    if isempty(pt); T.prep_time(t,1) = NaN; else; T.prep_time(t,1) = pt; end
+                    % decide whether to use photodiode, or not, for RT
+                    % calculation (for pilot data ? SN>90 ? it's not a
+                    % good idea because use of photodiode changed
+                    % between participants
+                    if sn(s) > 90; diode = 0; else; diode = 1; end
+                    M = staygo(D(t), t, diode);
+                    T = addstruct(T, M); % combine structures to save staygo info
+                    % calc reach times
+                    T.reach1(t,1) = M.En1 - M.MO;
+                    T.reach2(t,1) = M.En2 - M.Ex1;
+                    T.reach3(t,1) = M.En3 - M.Ex2;
+                    T.reach4(t,1) = M.En4 - M.Ex3;
+                    T.reach_all(t,:) = [T.reach1(t,1), T.reach2(t,1), T.reach3(t,1), T.reach4(t,1)];
+                    T.reach_sum(t,1) = nansum(T.reach_all(t,:));
+                    % calc dwell times
+                    T.dwell1(t,1) = M.Ex1 - M.En1;
+                    T.dwell2(t,1) = M.Ex2 - M.En2;
+                    T.dwell3(t,1) = M.Ex3 - M.En3;
+                    T.dwell4(t,1) = M.End - M.En4;
+                    T.dwell_all(t,:) = [T.dwell1(t,1), T.dwell2(t,1), T.dwell3(t,1), T.dwell4(t,1)];
+                    T.dwell_sum(t,1) = nansum(T.dwell_all(t,:));
+                    % calc overall mov times
+                    T.RT(t,1) = M.MO - M.GS;
+                    T.MT(t,1) = M.End - M.MO;
+                    T.TT(t,1) = M.End - M.GS;
+                    
+                    %-------------------------------------------------------------------------------------------------------------------------------------
+                    % if RT is negative, or impossibly fast, it means
+                    % cue anticipation, hence flag as error. Same for
+                    % reach times longer than 1.5s, bad trials
+                    if T.RT(t,1)<=50 || any(T.reach_all(t,:)>1500)
+                        T.is_error(t,1) = 1;
+                        T.timing_error(t,1) = 1;
                     end
-                    T = addstruct(T, M);
                     
                     %-------------------------------------------------------------------------------------------------------------------------------------
                     % add points info

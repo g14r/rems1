@@ -13,7 +13,7 @@ function etimes = staygo(data,index,diode)
 %   behavior. Note that photodiode should APPEAR when the go target
 %   DISAPPEARS for this to work propoerly (the photodiode takes longer to
 %   respond to light turning off than light turning on)
-%   
+%
 %
 %   Returns:
 %   GS:    Go signal (same as GO_SIGNAL)
@@ -30,7 +30,8 @@ function etimes = staygo(data,index,diode)
 %
 %   Right now the code will not run on error trials.
 
-go = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'GO_SIGNAL'))*1000);      % Look up the go signal; in the
+go = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'GO_SIGNAL'))*1000);      % Look up the go signal. If empty, fill with NaN
+if isempty(go); go = NaN; end
 
 targets = [data.TARGET_TABLE.X_GLOBAL(1:9),data.TARGET_TABLE.Y_GLOBAL(1:9)].*.01;   % targets are the same for each trial
 radii = data.TARGET_TABLE.Logical_radius(1:9)*.01;                                  % initialize according to logical radius
@@ -42,11 +43,11 @@ if isempty(rtimes)                                                              
     mo = nan;
 else
     vcomp = [data.Right_HandXVel, data.Right_HandYVel];                             % X and Y components of velocity
-    vel_trial = sqrt(sum(vcomp.^2,2));   
+    vel_trial = sqrt(sum(vcomp.^2,2));
     vel = vel_trial(go:rtimes(1));                                                  % compute velocity in first reach interval
     [~,y] = max(vel > 0.05*max(vel));                                               % find index where v > 5% of max velocity
     mo = y + go;                                                                    % get time w.r.t. beginning of trial
-end    
+end
 
 if diode == 1                                                                       % compute onset based on photodiode
     if ~isempty(rtimes)                                                             % we can only do this if reach 1 exists
@@ -55,7 +56,7 @@ if diode == 1                                                                   
         go = on + go;                                                               % onset in actual time
     end
 end
-        
+
 Targs = zeros(4,1);
 Targs(1) = data.TP_TABLE.TARGET_1(index);                       % Looking up the target order
 Targs(2) = data.TP_TABLE.TARGET_2(index);
@@ -86,5 +87,9 @@ etimes.Ex2 = L(2);
 etimes.Ex3 = L(3);
 etimes.Ex4 = L(4);                                              % Exit for target 4 never means anything!
 etimes.End = round(data.EVENTS.TIMES(contains(data.EVENTS.LABELS, 'SEQ_END'))*1000); %SEQ_END denotes the end of each reach (after the dwell-time)
-etimes.End = etimes.End(end);                                   % Therefore, to compute the end of a sequence we need to take the end of the last reach
-
+% Therefore, to compute the end of a sequence we need to take the end of the last reach
+if isempty(etimes.End) % if etimes is empty (due to error), fill with NaN
+    etimes.End = NaN;
+else
+    etimes.End = etimes.End(end);
+end

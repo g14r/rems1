@@ -200,10 +200,14 @@ switch (what)
                     
                     %-------------------------------------------------------------------------------------------------------------------------------------
                     % calculate path length (distance between targets) for each segment and whole sequence
-                    T.reach_dist(t,:) = nan(1,numel(T.seq_cue(t,:))); % preallocate with NaNs
+                    T.dist_all(t,:) = nan(1,numel(T.seq_cue(t,:))); % preallocate with NaNs
                     dist = sqrt( sum( ( diff( targets([1,T.seq_cue(t,T.seq_cue(t,:)<10)], :) ) ).^2, 2) ); % calculate distance for successive reaches (always starting from 1, which is home target)
-                    T.reach_dist(t,1:numel(dist)) = dist'; % store distance info
-                    T.path_len(t,1) = nansum(T.reach_dist(t,:));
+                    T.dist_all(t,1:numel(dist)) = dist'; % store distance info
+                    T.dist1(t,1) = T.dist_all(t,1);
+                    T.dist2(t,1) = T.dist_all(t,2);
+                    T.dist3(t,1) = T.dist_all(t,3);
+                    T.dist4(t,1) = T.dist_all(t,4);
+                    T.dist_sum(t,1) = nansum(T.dist_all(t,:));
                     
                     %-------------------------------------------------------------------------------------------------------------------------------------
                     % add error info (tagging of different error types)
@@ -240,6 +244,21 @@ switch (what)
                         % between participants
                         if sn(s) > 90; diode = 0; else; diode = 1; end
                         M = staygo(D(t), t, diode);
+                        % calc reach times
+                        T.reach1(t,1) = T.En1(t,1) - T.MO(t,1);
+                        T.reach2(t,1) = T.En2(t,1) - T.Ex1(t,1);
+                        T.reach3(t,1) = T.En3(t,1) - T.Ex2(t,1);
+                        T.reach4(t,1) = T.En4(t,1) - T.Ex3(t,1);
+                        T.reach_all(t,:) = [T.reach1(t,1), T.reach2(t,1), T.reach3(t,1), T.reach4(t,1)];
+                        T.reach_sum(t,1) = nansum(T.reach_all(t,:));
+                        % calc dwell times
+                        T.dwell1(t,1) = T.Ex1(t,1) - T.En1(t,1);
+                        T.dwell2(t,1) = T.Ex2(t,1) - T.En2(t,1);
+                        T.dwell3(t,1) = T.Ex3(t,1) - T.En3(t,1);
+                        T.dwell4(t,1) = T.End(t,1) - T.En4(t,1);
+                        T.dwell_all(t,:) = [T.dwell1(t,1), T.dwell2(t,1), T.dwell3(t,1), T.dwell4(t,1)];
+                        T.dwell_sum(t,1) = nansum(T.dwell_all(t,:));
+                        % calc overall mov times
                         T.RT(t,1) = M.MO - M.GS;
                         T.MT(t,1) = M.End - M.MO;
                         T.TT(t,1) = M.End - M.GS;
@@ -247,7 +266,7 @@ switch (what)
                         %-------------------------------------------------------------------------------------------------------------------------------------
                         % if RT is negative, or impossibly fast, it means
                         % cue anticipation, hence an error
-                        if T.RT(t,1)<=50 || T.MT(t,1)>1500
+                        if T.RT(t,1)<=50 || any(T.reach_all(t,:)>1500)
                             T.is_error(t,1) = 1;
                             T.timing_error(t,1) = 1;
                             T.prep_time(t,1) = NaN;

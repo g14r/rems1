@@ -234,7 +234,7 @@ switch (what)
                     end
                     
                     %-------------------------------------------------------------------------------------------------------------------------------------
-                    % add RT/MT info
+                    % add movement timing info
                     if T.is_error(t,1) == 0
                         % correct trial
                         T.prep_time(t,1) = (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'GO_SIGNAL')),3))*1000 - (round(D(t).EVENTS.TIMES(contains(D(t).EVENTS.LABELS, 'TARGETS_ON')),2))*1000;
@@ -265,41 +265,29 @@ switch (what)
                         
                         %-------------------------------------------------------------------------------------------------------------------------------------
                         % if RT is negative, or impossibly fast, it means
-                        % cue anticipation, hence an error
+                        % cue anticipation, hence flag as error. Same for
+                        % reach times longer than 1.5s, bad trials
                         if T.RT(t,1)<=50 || any(T.reach_all(t,:)>1500)
                             T.is_error(t,1) = 1;
                             T.timing_error(t,1) = 1;
-                            T.prep_time(t,1) = NaN;
-                            M.GS = NaN;
-                            M.MO = NaN;
-                            M.En1 = NaN;
-                            M.En2 = NaN;
-                            M.En3 = NaN;
-                            M.En4 = NaN;
-                            M.Ex1 = NaN;
-                            M.Ex2 = NaN;
-                            M.Ex3 = NaN;
-                            M.Ex4 = NaN;
-                            M.End = NaN;
-                            T.RT(t,1) = NaN;
-                            T.MT(t,1) = NaN;
-                            T.TT(t,1) = NaN;
                         end
                         
                     else
-                        % error trial (filled with NaNs)
+                        % error trial (filled with NaNs as we don't have
+                        % all the information that we need)
                         T.prep_time(t,1) = NaN;
-                        M.GS = NaN;
-                        M.MO = NaN;
-                        M.En1 = NaN;
-                        M.En2 = NaN;
-                        M.En3 = NaN;
-                        M.En4 = NaN;
-                        M.Ex1 = NaN;
-                        M.Ex2 = NaN;
-                        M.Ex3 = NaN;
-                        M.Ex4 = NaN;
-                        M.End = NaN;
+                        T.reach1(t,1) = NaN;
+                        T.reach2(t,1) = NaN;
+                        T.reach3(t,1) = NaN;
+                        T.reach4(t,1) = NaN;
+                        T.reach_all(t,:) = NaN;
+                        T.reach_sum(t,1) = NaN;
+                        T.dwell1(t,1) = NaN;
+                        T.dwell2(t,1) = NaN;
+                        T.dwell3(t,1) = NaN;
+                        T.dwell4(t,1) = NaN;
+                        T.dwell_all(t,:) = NaN;
+                        T.dwell_sum(t,1) = NaN;
                         T.RT(t,1) = NaN;
                         T.MT(t,1) = NaN;
                         T.TT(t,1) = NaN;

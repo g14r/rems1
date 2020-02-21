@@ -245,17 +245,17 @@ switch (what)
                         if sn(s) > 90; diode = 0; else; diode = 1; end
                         M = staygo(D(t), t, diode);
                         % calc reach times
-                        T.reach1(t,1) = T.En1(t,1) - T.MO(t,1);
-                        T.reach2(t,1) = T.En2(t,1) - T.Ex1(t,1);
-                        T.reach3(t,1) = T.En3(t,1) - T.Ex2(t,1);
-                        T.reach4(t,1) = T.En4(t,1) - T.Ex3(t,1);
+                        T.reach1(t,1) = M.En1 - M.MO;
+                        T.reach2(t,1) = M.En2 - M.Ex1;
+                        T.reach3(t,1) = M.En3 - M.Ex2;
+                        T.reach4(t,1) = M.En4 - M.Ex3;
                         T.reach_all(t,:) = [T.reach1(t,1), T.reach2(t,1), T.reach3(t,1), T.reach4(t,1)];
                         T.reach_sum(t,1) = nansum(T.reach_all(t,:));
                         % calc dwell times
-                        T.dwell1(t,1) = T.Ex1(t,1) - T.En1(t,1);
-                        T.dwell2(t,1) = T.Ex2(t,1) - T.En2(t,1);
-                        T.dwell3(t,1) = T.Ex3(t,1) - T.En3(t,1);
-                        T.dwell4(t,1) = T.End(t,1) - T.En4(t,1);
+                        T.dwell1(t,1) = M.Ex1 - M.En1;
+                        T.dwell2(t,1) = M.Ex2 - M.En2;
+                        T.dwell3(t,1) = M.Ex3 - M.En3;
+                        T.dwell4(t,1) = M.End - M.En4;
                         T.dwell_all(t,:) = [T.dwell1(t,1), T.dwell2(t,1), T.dwell3(t,1), T.dwell4(t,1)];
                         T.dwell_sum(t,1) = nansum(T.dwell_all(t,:));
                         % calc overall mov times

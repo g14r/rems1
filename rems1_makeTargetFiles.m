@@ -85,7 +85,6 @@ end
 randind = randperm( size(seq_pool, 1)); % get random indices
 seq_pool = seq_pool(randind, :); % randomize order of sequence pool
 
-
 %% add sequence length factor
 seq_cue = zeros([n_seq_exe, n_seq_items, n_seq_len]); % initialize sequences
 c = 1; % initialize counter

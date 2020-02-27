@@ -29,7 +29,8 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % subjects
 % incomplete:
 % high-error:
-subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
+%subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
+subj = {'s01'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end

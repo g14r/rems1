@@ -30,7 +30,7 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % incomplete:
 % high-error:
 %subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
-subj = {'s01'};
+subj = {'s01', 's02'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -129,7 +129,7 @@ switch (what)
                     % tag same sequence repetitions
                     if t>1
                         % every trial but the first
-                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) % && T.is_error(t-1,1) == 0
+                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) && T.is_error(t-1,1) == 0
                             % is repetition
                             rn = rn + 1;
                             T.is_rep(t,1) = 1;

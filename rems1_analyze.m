@@ -64,8 +64,8 @@ white = [255,255,255]/255;
 fs = 20; %default font size for all figures
 lw = 4; %4; %default line width for all figures
 ms = 10; %12; %default marker size for all figures
-rs = 0:3; %0:5; %[0,1,2,3,4,5,6]; %default repetition number subset (full range = 0:10; 0 = full set)
-maxRep = 3; % default ceiling level for repetition number (0 = no ceiling)
+rs = 0:1; %0:5; %[0,1,2,3,4,5,6]; %default repetition number subset (full range = 0:10; 0 = full set)
+maxRep = 0; % default ceiling level for repetition number (0 = no ceiling)
 
 % styles
 style.reset;
@@ -129,7 +129,7 @@ switch (what)
                     % tag same sequence repetitions
                     if t>1
                         % every trial but the first
-                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) %&& T.is_error(t-1,1) == 0
+                        if all(T.seq_cue(t,:) == T.seq_cue(t-1,:)) && T.is_error(t-1,1) == 0
                             % is repetition
                             rn = rn + 1;
                             T.is_rep(t,1) = 1;

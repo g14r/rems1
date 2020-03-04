@@ -30,7 +30,7 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 % incomplete:
 % high-error:
 %subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
-subj = {'s01', 's02', 's03', 's04', 's05'};
+subj = {'s01', 's02', 's03', 's04', 's05', 's06', 's07'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -64,7 +64,7 @@ white = [255,255,255]/255;
 fs = 20; %default font size for all figures
 lw = 4; %4; %default line width for all figures
 ms = 10; %12; %default marker size for all figures
-rs = 0:1; %0:5; %[0,1,2,3,4,5,6]; %default repetition number subset (full range = 0:10; 0 = full set)
+rs = 0:3; %0:5; %[0,1,2,3,4,5,6]; %default repetition number subset (full range = 0:10; 0 = full set)
 maxRep = 0; % default ceiling level for repetition number (0 = no ceiling)
 
 % styles
@@ -352,6 +352,8 @@ switch (what)
         subplot(3,4,5:8);
         plt.box(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'style',darkgraysty);
         hold on;
+        plt.line(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'split',T.SN, 'errorbars','none');
+        hold on;
         plt.scatter(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'split',T.SN, 'regression','none');
         xlabel('Sequence length'); ylabel('Repetition difference (% of MT)');  set(gca,'fontsize',fs); %axis square;
         drawline(0, 'dir','horz', 'linestyle',':');
@@ -413,6 +415,8 @@ switch (what)
         
         subplot(3,4,5:8);
         plt.box(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'style',darkgraysty);
+        hold on;
+        plt.line(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'split',T.SN, 'errorbars','none');
         hold on;
         plt.scatter(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'split',T.SN, 'regression','none');
         xlabel('Sequence length'); ylabel('Repetition difference (% of RT)');  set(gca,'fontsize',fs); %axis square;

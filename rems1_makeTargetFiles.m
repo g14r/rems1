@@ -145,8 +145,8 @@ for t = 1:n_trials
     p = T * z; % update probabilities
     z = pickRandSeq(p); % update pick
     % put an upper limit to repetition number (i.e. avoid cases in which
-    % you have more than 4 repetitions (5 executions) in a row
-    if B.rep_num(t,1) == 4
+    % you have more than 3 repetitions (4 executions) in a row
+    if B.rep_num(t,1) == 3
         while L.idx(find(z,1)) == B.seq_idx(t,1)
             z = pickRandSeq(p); % update pick
         end
@@ -158,7 +158,7 @@ for t = 1:n_trials
     trial_mat = [trial_mat; this_trial]; %#ok<*AGROW>
 end
 % sanity check: how many repetitions for each condition of interest?
-%figure; subplot(131); plt.hist(B.is_rep); subplot(132); plt.hist(B.seq_len); subplot(133); plt.hist(B.rep_num);
+%subplot(131); plt.hist(B.is_rep); subplot(132); plt.hist(B.seq_len); subplot(133); plt.hist(B.rep_num);
 
 %% save structure B as a target file (.tgt) and return output data structure B
 outfname = sprintf('rems1_s%02d_b%02d', s, b);

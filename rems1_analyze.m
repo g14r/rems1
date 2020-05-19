@@ -14,6 +14,7 @@ function [varargout] = rems1_analyze(what, varargin)
 %                           [D] = rems1_analyze('re_MT');               % repetition effect on movement times (MT)
 %                           [D] = rems1_analyze('re_RT');               % repetition effect on reaction times (RT)
 %                           [D] = rems1_analyze('re_IRI');              % repetition effect on inter reach intervals (IRI)
+%                           [D] = rems1_analyze('re_stay_go');          % repetition effect separately for dwells (stay) and reach segments (go)
 %
 %
 % --
@@ -27,10 +28,10 @@ if ~exist(path_to_analyze, 'dir'); mkdir(path_to_analyze); end % if it doesn't e
 %% globals
 
 % subjects
-% incomplete:
-% high-error:
-%subj = {'s98', 's97', 's96', 's95', 's94', 's93'};
 subj = {'s01', 's02', 's03', 's04', 's05', 's06', 's07'};
+% incomplete: {'s08'}
+% high error: {  };
+% pilot data: {'s98', 's97', 's96', 's95', 's94', 's93'};
 ns = numel(subj);
 subvec = zeros(1,ns);
 for i = 1:ns; subvec(1,i) = str2double(subj{i}(2:3)); end
@@ -71,7 +72,7 @@ maxRep = 0; % default ceiling level for repetition number (0 = no ceiling)
 style.reset;
 style.custom({blue,lightblue,red,lightred,orange,yellow,lightyellow,purple,lightpurple,darkgray,gray,gray2,lightgray,green,lightgreen,black,silver,white,...
     cbs_red,cbs_yellow,cbs_blue,cbs_green,cbs_pink});
-%isrepsty = style.custom({lightgray, darkgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
+isrepsty = style.custom({lightgray, darkgray}, 'markersize',ms, 'linewidth',2, 'errorbars','shade');
 %lightgraysty = style.custom({lightgray}, 'markertype','none', 'linewidth',1, 'errorwidth',1, 'errorcap',0, 'linestyle','-');
 darkgraysty = style.custom({darkgray}, 'markersize',ms, 'linewidth',lw, 'errorbars','shade');
 %blacksty = style.custom({black}, 'markertype','none', 'linewidth',lw, 'linestyle','--','errorbars','plusminus', 'errorwidth',lw, 'errorcap',0);%, 'linestyle','none');
@@ -245,18 +246,56 @@ switch (what)
                     if sn(s) > 90; diode = 0; else; diode = 1; end
                     M = staygo(D(t), t, diode);
                     T = addstruct(T, M); % combine structures to save staygo info
-                    % calc reach times
-                    T.reach1(t,1) = M.En1 - M.MO;
-                    T.reach2(t,1) = M.En2 - M.Ex1;
-                    T.reach3(t,1) = M.En3 - M.Ex2;
-                    T.reach4(t,1) = M.En4 - M.Ex3;
+                    switch T.seq_len(t,1)
+                        case 1
+                            % calc reach times
+                            T.reach1(t,1) = M.En1 - M.MO;
+                            T.reach2(t,1) = NaN;
+                            T.reach3(t,1) = NaN;
+                            T.reach4(t,1) = NaN;
+                            % calc dwell times
+                            T.dwell1(t,1) = M.End - M.En1;
+                            T.dwell2(t,1) = NaN;
+                            T.dwell3(t,1) = NaN;
+                            T.dwell4(t,1) = NaN;
+                        case 2
+                            % calc reach times
+                            T.reach1(t,1) = M.En1 - M.MO;
+                            T.reach2(t,1) = M.En2 - M.Ex1;
+                            T.reach3(t,1) = NaN;
+                            T.reach4(t,1) = NaN;
+                            % calc dwell times
+                            T.dwell1(t,1) = M.Ex1 - M.En1;
+                            T.dwell2(t,1) = M.End - M.En2;
+                            T.dwell3(t,1) = NaN;
+                            T.dwell4(t,1) = NaN;
+                        case 3
+                            % calc reach times
+                            T.reach1(t,1) = M.En1 - M.MO;
+                            T.reach2(t,1) = M.En2 - M.Ex1;
+                            T.reach3(t,1) = M.En3 - M.Ex2;
+                            T.reach4(t,1) = NaN;
+                            % calc dwell times
+                            T.dwell1(t,1) = M.Ex1 - M.En1;
+                            T.dwell2(t,1) = M.Ex2 - M.En2;
+                            T.dwell3(t,1) = M.End - M.En3;
+                            T.dwell4(t,1) = NaN;
+                        case 4
+                            % calc reach times
+                            T.reach1(t,1) = M.En1 - M.MO;
+                            T.reach2(t,1) = M.En2 - M.Ex1;
+                            T.reach3(t,1) = M.En3 - M.Ex2;
+                            T.reach4(t,1) = M.En4 - M.Ex3;
+                            % calc dwell times
+                            T.dwell1(t,1) = M.Ex1 - M.En1;
+                            T.dwell2(t,1) = M.Ex2 - M.En2;
+                            T.dwell3(t,1) = M.Ex3 - M.En3;
+                            T.dwell4(t,1) = M.End - M.En4;
+                        otherwise
+                            error('Unknown sequence length type!');
+                    end
                     T.reach_all(t,:) = [T.reach1(t,1), T.reach2(t,1), T.reach3(t,1), T.reach4(t,1)];
                     T.reach_sum(t,1) = nansum(T.reach_all(t,:));
-                    % calc dwell times
-                    T.dwell1(t,1) = M.Ex1 - M.En1;
-                    T.dwell2(t,1) = M.Ex2 - M.En2;
-                    T.dwell3(t,1) = M.Ex3 - M.En3;
-                    T.dwell4(t,1) = M.End - M.En4;
                     T.dwell_all(t,:) = [T.dwell1(t,1), T.dwell2(t,1), T.dwell3(t,1), T.dwell4(t,1)];
                     T.dwell_sum(t,1) = nansum(T.dwell_all(t,:));
                     % calc overall mov times
@@ -336,7 +375,7 @@ switch (what)
         
         for ip =  1:4
             subplot(3,4,ip); title(sprintf('Seq Len: %d', ip)); hold on;
-            plt.box(T.is_rep, T.MT, 'style',darkgraysty, 'subset',T.seq_len==ip); hold on;
+            plt.box(T.is_rep, T.MT, 'style',darkgraysty, 'subset',T.seq_len==ip, 'linscale',0); hold on;
             plt.scatter(T.is_rep+1, T.MT, 'split',T.SN, 'subset',T.seq_len==ip);
             xticklabels({'Switch', 'Repetition'}); ylabel('Movement time (ms)'); set(gca,'fontsize',fs); axis square;
         end
@@ -350,7 +389,7 @@ switch (what)
             'subset',D.is_error==0);
         
         subplot(3,4,5:8);
-        plt.box(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'style',darkgraysty);
+        plt.box(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'style',darkgraysty, 'linscale',0);
         hold on;
         plt.line(T.seq_len, ((T.MTs-T.MTr)./T.MT)*100, 'split',T.SN, 'errorbars','none');
         hold on;
@@ -400,7 +439,7 @@ switch (what)
         
         for ip =  1:4
             subplot(3,4,ip); title(sprintf('Seq Len: %d', ip)); hold on;
-            plt.box(T.is_rep, T.RT, 'style',darkgraysty, 'subset',T.seq_len==ip); hold on;
+            plt.box(T.is_rep, T.RT, 'style',darkgraysty, 'subset',T.seq_len==ip, 'linscale',0); hold on;
             plt.scatter(T.is_rep+1, T.RT, 'split',T.SN, 'subset',T.seq_len==ip);
             xticklabels({'Switch', 'Repetition'}); ylabel('Reaction time (ms)'); set(gca,'fontsize',fs); axis square;
         end
@@ -414,7 +453,7 @@ switch (what)
             'subset',D.is_error==0);
         
         subplot(3,4,5:8);
-        plt.box(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'style',darkgraysty);
+        plt.box(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'style',darkgraysty, 'linscale',0);
         hold on;
         plt.line(T.seq_len, ((T.RTs-T.RTr)./T.RT)*100, 'split',T.SN, 'errorbars','none');
         hold on;
@@ -509,6 +548,70 @@ switch (what)
         plt.match('y');
         
         % out
+        D.T=T; %incorporate the sub-structures as fields of main structure
+        varargout={D}; %return main structure
+        
+    case 're_stay_go' % repetition effect separating dwells and reach segments
+        sn = subvec;
+        vararginoptions(varargin, {'sn'});
+        if nargin>1 % load single subj data
+            D = load( fullfile(path_to_data, sprintf('rems1_s%02d.mat', sn)));
+        else % load group data
+            D = load(fullfile(path_to_analyze, sprintf('rems1_ds_N=%02d.mat', numel(sn))));
+        end
+        % select repetitions of interest
+        if numel(rs)>1; D = getrow(D, ismember(D.rep_num, rs)); end
+        
+        % open figure
+        if nargin>1; figure('Name',sprintf('Rep Eff stay go - subj %02d',sn)); else; figure('Name',sprintf('Rep Eff stay go - group (N=%d)',numel(sn))); end
+        set(gcf, 'Units','normalized', 'Position',[0.1,0.1,0.8,0.8], 'Resize','off', 'Renderer','painters');
+        
+        %-------------------------------------------------------------------------------------------------------------------------------------
+        % Rep Eff stay go
+        % re-organize table
+        T.reach = []; T.dwell = []; T.segment = [];
+        T.SN = []; T.BN = []; T.TN = [];
+        T.is_rep = []; T.seq_len = [];
+        T.is_error = []; T.prep_time = [];
+        for i = 1:4
+            T.reach = [T.reach; eval(sprintf('D.reach%d',i))];
+            T.dwell = [T.dwell; eval(sprintf('D.dwell%d',i))];
+            T.segment = [T.segment; ones(numel(D.reach1),1) * i];
+            T.SN = [T.SN; D.SN];
+            T.BN = [T.BN; D.BN];
+            T.TN = [T.TN; D.TN];
+            T.is_rep = [T.is_rep; D.is_rep];
+            T.seq_len = [T.seq_len; D.seq_len];
+            T.is_error = [T.is_error; D.is_error];
+            T.prep_time = [T.prep_time; D.prep_time];
+        end
+        % summary table
+        S = tapply(T, {'SN', 'is_rep', 'seq_len', 'segment'}, ...
+            {T.reach, 'nanmedian', 'name', 'reach'}, ...
+            {T.dwell, 'nanmedian', 'name', 'dwell'}, ...
+            'subset', T.is_error == 0);
+        
+        for ip =  1:4
+            subplot(2,4,ip); title(sprintf('Seq Len: %d', ip)); hold on;
+            %plt.box(S.segment, S.reach, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip), 'linscale',0); hold on;
+            plt.bar(S.segment, S.reach, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip)); hold on;
+            %plt.line(S.segment, S.reach, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip)); hold on;
+            %plt.line([S.segment S.is_rep+1], S.reach, 'split',S.SN, 'subset',S.seq_len==ip & ismember(S.segment,1:ip));
+            xlabel('Segment number'); %xticklabels(repmat({'S','R'},1,ip)); 
+            ylabel('Reach time (ms)'); set(gca,'fontsize',fs); axis square; ylim([200 350]);
+            if ip>1
+                subplot(2,4,4+ip);
+                %plt.box(S.segment, S.dwell, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip-1), 'linscale',0); hold on;
+                plt.bar(S.segment, S.dwell, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip-1)); hold on;
+                %plt.line(S.segment, S.dwell, 'split',S.is_rep, 'style',isrepsty, 'leg',isrepleg, 'subset',S.seq_len==ip & ismember(S.segment,1:ip-1)); hold on;
+                %plt.line([S.segment S.is_rep+1], S.dwell, 'split',S.SN, 'subset',S.seq_len==ip & ismember(S.segment,1:ip-1));
+                xlabel('Segment number'); %xticklabels(repmat({'S','R'},1,ip)); 
+                ylabel('Dwell time (ms)'); set(gca,'fontsize',fs); axis square; ylim([200 350]);
+            end
+        end
+        
+        % out
+        D.S=S; %incorporate the sub-structures as fields of main structure
         D.T=T; %incorporate the sub-structures as fields of main structure
         varargout={D}; %return main structure
         
